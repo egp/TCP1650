@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <vector>
 
+void runStateAndFailureTests();
+
 struct BusOp {
   enum class Kind { Write, Read } kind;
   uint8_t address;
@@ -281,5 +283,6 @@ int main() {
   testSetDotUsesHighBitAndEnforcesOneDot();
   testGetButtonsSwitchesModesAndRestoresDisplay();
   testRejectsOutOfRangeValues();
+  runStateAndFailureTests();
   return 0;
 }
