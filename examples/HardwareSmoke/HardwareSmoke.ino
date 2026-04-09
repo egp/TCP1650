@@ -1,5 +1,7 @@
 #include <TCP1650.h>
 
+#include <stdlib.h>
+
 TCP1650 display(SDA, SCL);
 
 namespace {
@@ -27,10 +29,11 @@ void printHelp() {
   Serial.println();
   Serial.println(F("Commands:"));
   Serial.println(F("  h              help"));
-  Serial.println(F("  n <0-9999>     display number"));
+  Serial.println(F("  n <0-9999>     display decimal number"));
+  Serial.println(F("  x <0-FFFF>     display hexadecimal value"));
   Serial.println(F("  z <0|1>        leading zeros off/on"));
   Serial.println(F("  d <0-3>        set decimal point position"));
-  Serial.println(F("  x              clear decimal point"));
+  Serial.println(F("  c              clear decimal point"));
   Serial.println(F("  b              start/continue 1 Hz button poll mode"));
   Serial.println(F("                 any non-b command exits poll mode"));
   Serial.println(F("  +              brightness up"));
@@ -40,27 +43,82 @@ void printHelp() {
   Serial.println();
 }
 
-bool readIntFromSerial(long& value) {
-  while (!Serial.available()) {
+bool readToken(char* buffer, size_t bufferSize) {
+  if (bufferSize == 0) {
+    return false;
   }
-  value = Serial.parseInt();
-  return true;
+
+  size_t used = 0;
+  bool started = false;
+
+  while (true) {
+    while (!Serial.available()) {
+    }
+
+    const int raw = Serial.read();
+    if (raw < 0) {
+      continue;
+    }
+
+    const char c = static_cast<char>(raw);
+
+    if (!started) {
+      if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+        continue;
+      }
+      started = true;
+    } else if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+      break;
+    }
+
+    if (used + 1 < bufferSize) {
+      buffer[used++] = c;
+    }
+  }
+
+  buffer[used] = '\0';
+  return used > 0;
+}
+
+bool readDecimalValue(long& value) {
+  char token[16] = {};
+  if (!readToken(token, sizeof(token))) {
+    return false;
+  }
+
+  char* end = nullptr;
+  value = strtol(token, &end, 10);
+  return end != token && *end == '\0';
+}
+
+bool readHexValue(unsigned long& value) {
+  char token[16] = {};
+  if (!readToken(token, sizeof(token))) {
+    return false;
+  }
+
+  char* end = nullptr;
+  value = strtoul(token, &end, 16);
+  return end != token && *end == '\0';
 }
 
 bool applyCurrentDisplay() {
+  bool ok = false;
+
   if (currentDisplayMode == DisplayMode::Hex) {
-    if (configuredDot >= 0) {
-      (void)display.setDot(static_cast<uint8_t>(configuredDot), false);
-    }
-    return display.setHex(currentHexValue, currentLeadingZeros);
+    ok = display.setHex(currentHexValue, currentLeadingZeros);
+  } else {
+    ok = display.setNumber(currentNumberValue, currentLeadingZeros);
   }
 
-  if (!display.setNumber(currentNumberValue, currentLeadingZeros)) {
+  if (!ok) {
     return false;
   }
+
   if (configuredDot >= 0) {
     return display.setDot(static_cast<uint8_t>(configuredDot), true);
   }
+
   return true;
 }
 
@@ -88,7 +146,7 @@ void pollButtons(bool force) {
     if (applyCurrentDisplay()) {
       printButtonsRaw(buttons);
     } else {
-      Serial.println(F("setHex failed"));
+      Serial.println(F("display update failed"));
     }
   }
 }
@@ -127,25 +185,55 @@ void handleCommand(char command) {
 
   if (command == 'n') {
     long value = 0;
-    (void)readIntFromSerial(value);
+    if (!readDecimalValue(value)) {
+      Serial.println(F("invalid decimal value"));
+      return;
+    }
     if (value < 0 || value > 9999) {
       Serial.println(F("number out of range"));
       return;
     }
+
     currentNumberValue = static_cast<uint16_t>(value);
     currentDisplayMode = DisplayMode::Number;
     if (applyCurrentDisplay()) {
-      Serial.print(F("displayed "));
+      Serial.print(F("decimal = "));
       Serial.println(currentNumberValue);
     } else {
-      Serial.println(F("setNumber failed"));
+      Serial.println(F("display update failed"));
+    }
+    return;
+  }
+
+  if (command == 'x') {
+    unsigned long value = 0;
+    if (!readHexValue(value)) {
+      Serial.println(F("invalid hex value"));
+      return;
+    }
+    if (value > 0xFFFFUL) {
+      Serial.println(F("hex value out of range"));
+      return;
+    }
+
+    currentHexValue = static_cast<uint16_t>(value);
+    currentDisplayMode = DisplayMode::Hex;
+    if (applyCurrentDisplay()) {
+      Serial.print(F("hex = 0x"));
+      Serial.println(currentHexValue, HEX);
+    } else {
+      Serial.println(F("display update failed"));
     }
     return;
   }
 
   if (command == 'z') {
     long enabled = 0;
-    (void)readIntFromSerial(enabled);
+    if (!readDecimalValue(enabled)) {
+      Serial.println(F("invalid leading-zero value"));
+      return;
+    }
+
     currentLeadingZeros = (enabled != 0);
     if (applyCurrentDisplay()) {
       Serial.print(F("leading zeros "));
@@ -158,14 +246,15 @@ void handleCommand(char command) {
 
   if (command == 'd') {
     long position = 0;
-    (void)readIntFromSerial(position);
+    if (!readDecimalValue(position)) {
+      Serial.println(F("invalid dot position"));
+      return;
+    }
     if (position < 0 || position > 3) {
       Serial.println(F("dot position out of range"));
       return;
     }
-    if (configuredDot >= 0) {
-      (void)display.setDot(static_cast<uint8_t>(configuredDot), false);
-    }
+
     configuredDot = static_cast<int8_t>(position);
     if (display.setDot(static_cast<uint8_t>(configuredDot), true)) {
       Serial.print(F("dot set to "));
@@ -176,7 +265,7 @@ void handleCommand(char command) {
     return;
   }
 
-  if (command == 'x') {
+  if (command == 'c') {
     if (configuredDot >= 0) {
       (void)display.setDot(static_cast<uint8_t>(configuredDot), false);
       configuredDot = -1;

@@ -38,11 +38,9 @@ Expected after `begin()`:
 - brightness defaults to `7`
 - display is enabled
 - display shows `0000`
-- no dot is lit
 
 - [ ] Display powers up
 - [ ] Display shows `0000`
-- [ ] No dot is lit
 - [ ] No visible flicker at idle
 
 Pass notes:
@@ -55,24 +53,13 @@ Fail notes:
 
 ## 3. Brightness control
 
-Check all public brightness values `0..7`.
-
 Expected:
 - `0` is dimmest
 - `7` is brightest
-- all settings are accepted
-- brightness changes are visibly monotonic enough for practical use
 
 - [ ] `setBrightness(0)` works
-- [ ] `setBrightness(1)` works
-- [ ] `setBrightness(2)` works
-- [ ] `setBrightness(3)` works
-- [ ] `setBrightness(4)` works
-- [ ] `setBrightness(5)` works
-- [ ] `setBrightness(6)` works
 - [ ] `setBrightness(7)` works
-- [ ] `0` appears dimmest
-- [ ] `7` appears brightest
+- [ ] brightness ordering looks correct
 
 Pass notes:
 -
@@ -83,8 +70,6 @@ Fail notes:
 ---
 
 ## 4. Decimal number display
-
-Check representative values.
 
 - [ ] `setNumber(0, false)` displays blank blank blank `0`
 - [ ] `setNumber(0, true)` displays `0000`
@@ -102,8 +87,6 @@ Fail notes:
 ---
 
 ## 5. Hex display
-
-Check representative values.
 
 - [ ] `setHex(0x0000, false)` displays blank blank blank `0`
 - [ ] `setHex(0x0000, true)` displays `0000`
@@ -129,10 +112,6 @@ Fail notes:
 
 ## 6. Dot behavior
 
-Expected:
-- dot bit is on one position only
-- setting a new dot clears the previous dot
-
 - [ ] `setDot(0, true)` lights digit 0 dot
 - [ ] `setDot(1, true)` lights digit 1 dot
 - [ ] `setDot(2, true)` lights digit 2 dot
@@ -150,16 +129,14 @@ Fail notes:
 
 ---
 
-## 7. Display enable/disable
-
-Expected:
-- `displayOff()` blanks the display
-- `displayOn()` restores visibility without corrupting cached content
+## 7. Display enable/disable and cache
 
 - [ ] `displayOff()` blanks the display
 - [ ] `displayOn()` restores the display
-- [ ] display content after restore is correct
-- [ ] dot state after restore is correct
+- [ ] off-state cache behavior works for decimal values
+- [ ] off-state cache behavior works for hex values
+- [ ] dot state survives off/on
+- [ ] the most recent off-state update is what appears after `displayOn()`
 
 Pass notes:
 -
@@ -169,32 +146,7 @@ Fail notes:
 
 ---
 
-## 8. Cached display while off
-
-Expected:
-- sending `setNumber(...)` or `setHex(...)` while the display is off updates the cache
-- re-enabling the display shows the cached digits
-- disabling the display does not clear the cache
-
-- [ ] `displayOff()` then `setNumber(...)` then `displayOn()` shows the cached decimal value
-- [ ] `displayOff()` then `setHex(...)` then `displayOn()` shows the cached hex value
-- [ ] cached dot state is preserved across off/on
-- [ ] multiple off-state updates show the most recent cached value after `displayOn()`
-
-Pass notes:
--
-
-Fail notes:
--
-
----
-
-## 9. Button / rotary read behavior
-
-Expected:
-- raw reads are stable
-- display survives temporary mode switch to 7-segment/key mode
-- no objectionable flicker during reads
+## 8. Button / rotary read behavior
 
 Observed rotary switch values from prior test:
 - `0x44`
@@ -211,7 +163,7 @@ Checklist:
 - [ ] observed values match expected pattern or are documented
 - [ ] display contents are restored correctly after read
 - [ ] dot state is restored correctly after read
-- [ ] no objectionable visible flicker during button polling
+- [ ] no unacceptable visible flicker during button polling
 
 Observed values:
 -
@@ -224,7 +176,7 @@ Fail notes:
 
 ---
 
-## 10. Poll mode smoke behavior
+## 9. Poll mode smoke behavior
 
 Using `HardwareSmoke.ino`:
 
@@ -241,7 +193,7 @@ Fail notes:
 
 ---
 
-## 11. Board-specific notes
+## 10. Board-specific notes
 
 ### Uno R3
 - [ ] compile

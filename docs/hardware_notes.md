@@ -60,7 +60,7 @@ and encodes it as:
 
 - `encoded = (userLevel + 1) mod 8`
 
-## Observed rotary-switch raw values
+## Observed button / rotary raw values
 
 Observed hardware results for the rotary switch positions:
 
@@ -71,14 +71,27 @@ Observed hardware results for the rotary switch positions:
 - `0x64`
 - `0x6C`
 
-The public API remains raw-byte oriented. Any decoding of those values into switch positions should stay outside the core library unless a later requirement says otherwise.
+The public API remains raw-byte oriented. Any decoding of those values into switch positions stays outside the core library.
 
-## Important open hardware checks
+## Observed smoke-test behavior
 
-1. Confirm whether the module needs a delay after switching into 7-segment/key mode before reading keys.
-2. Confirm whether display restore needs any additional delay after switching back to 8-segment mode.
-3. Confirm the exact behavior on Uno R3, Uno R4 Minima, and Uno R4 WiFi.
+Confirmed by hardware smoke testing:
+
+- brightness ordering looks correct
+- decimal display works
+- hex display works
+- dot behavior works
+- raw button values are stable
+- off/on cache behavior works
+- flicker during polling is brief and acceptable
+
+## Remaining hardware checks
+
+1. Confirm the exact behavior on Arduino Uno R3.
+2. Confirm the exact behavior on Arduino Uno R4 Minima.
+3. Confirm the exact behavior on Arduino Uno R4 WiFi.
+4. Add delays only if later board/module variants demonstrate a real need.
 
 ## Implementation strategy
 
-Keep all protocol constants centralized so hardware findings can be folded in with small localized edits.
+Keep protocol constants centralized so hardware findings can be folded in with small localized edits.

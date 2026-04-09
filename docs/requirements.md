@@ -1,4 +1,3 @@
-
 # TCP1650 requirements
 
 ## Functional requirements
@@ -15,7 +14,6 @@ R4. `begin()` shall:
 - enable display output
 - set brightness to `7`
 - write `0000`
-- clear the decimal point
 
 R5. The library shall provide `displayOn()` and `displayOff()`.
 
@@ -42,19 +40,25 @@ R15. Normal display mode shall be 8-segment mode.
 R16. `getButtons()` shall:
 - switch temporarily to 7-segment/key mode
 - read the raw key byte
-- switch back to 8-segment mode
-- refresh the cached display image
+- restore the prior display-control state
+- repaint cached display bytes only when visible output should be on
 
-R17. The library shall cache the final segment bytes for all four digits so display restoration after a button read does not require client recomputation.
+R17. The library shall cache the final segment bytes for all four digits so display restoration does not require client recomputation.
+
+R18. `displayOff()` shall not clear the cached display state.
+
+R19. While display output is off, `setNumber(...)`, `setHex(...)`, and `setDot(...)` shall update only the cached display state.
+
+R20. `displayOn()` shall actively repaint the cached display state.
 
 ## Non-functional requirements
 
-R18. The Arduino/Wire-specific layer shall be kept as thin as practical.
+R21. The Arduino/Wire-specific layer shall be kept as thin as practical.
 
-R19. Logic that does not require Arduino runtime shall be host-testable.
+R22. Logic that does not require Arduino runtime shall be host-testable.
 
-R20. Host-side tests shall run without third-party test frameworks.
+R23. Host-side tests shall run without third-party test frameworks.
 
-R21. Host-side tests shall be suitable for GitHub CI.
+R24. Host-side tests shall be suitable for GitHub CI.
 
-R22. Out-of-range inputs shall fail cleanly by returning `false` from the affected API call where the API returns `bool`.
+R25. Out-of-range inputs shall fail cleanly by returning `false` from the affected API call where the API returns `bool`.

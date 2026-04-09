@@ -2,9 +2,10 @@
 
 ## Goal
 
-Create a small Arduino library for the TCP1650/TM1650 that supports:
+Create a small Arduino library for the TM1650 that supports:
 
-- 4-digit numeric output
+- 4-digit decimal output
+- 4-digit hexadecimal output
 - one decimal point at a time
 - brightness control
 - display on/off
@@ -14,7 +15,7 @@ Create a small Arduino library for the TCP1650/TM1650 that supports:
 
 Status: complete
 
-Deliverables:
+Delivered:
 - Arduino library skeleton
 - docs
 - examples
@@ -23,27 +24,36 @@ Deliverables:
 
 ## Phase 1 — host-testable low-level core
 
-Status: in progress
+Status: complete
 
-Immediate work:
-- keep the Arduino/Wire layer thin
-- move protocol behavior into a host-testable core
-- add fake-transport host tests for exact register sequencing
-
-Acceptance criteria:
-- host tests verify exact write/read sequences for `begin()`, `setNumber()`, `setDot()`, and `getButtons()`
-- the public wrapper delegates to the host-tested core
-- only the thin Wire adapter remains outside host coverage
+Delivered:
+- thin Arduino/Wire layer
+- host-testable device core
+- fake-transport host tests for exact register sequencing
+- power-state and failure-path host coverage
 
 ## Phase 2 — hardware shakeout
 
+Status: substantially complete for smoke validation
+
+Delivered:
+- hardware smoke sketch
+- verification of brightness ordering
+- verification of decimal display
+- verification of hex display
+- verification of one-dot behavior
+- verification of raw button stability
+- verification of off/on cache behavior
+- acceptable flicker in normal smoke-test use
+
+## Phase 3 — remaining acceptance and release polish
+
 Tasks:
-- run the hardware smoke sketch on target boards
-- verify digit mapping
-- verify brightness behavior
-- verify one-dot behavior
-- verify temporary 7-segment button reads and subsequent 8-segment display restore
-- confirm the actual key-read address and any required settle timing on real hardware
+- run the hardware acceptance checklist on each target board
+- tighten any remaining board-specific notes
+- keep docs aligned with final code
+- push release commit
+- tag initial release
 
 ## Target boards
 
