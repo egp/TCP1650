@@ -24,7 +24,10 @@ bool TCP1650_Device::begin() {
 
 bool TCP1650_Device::displayOn() {
   displayEnabled_ = true;
-  return writeControl(true);
+  if (!writeControl(true)) {
+    return false;
+  }
+  return refreshDisplay();
 }
 
 bool TCP1650_Device::displayOff() {

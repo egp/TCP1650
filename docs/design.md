@@ -30,6 +30,7 @@ Role:
 - one-dot policy
 - button-read mode-switch sequence
 - display restore after button read
+- display restore after re-enabling output
 
 This layer does not include Arduino headers.
 
@@ -48,7 +49,7 @@ Role:
 The low-level core keeps:
 - display enabled flag
 - brightness level
-- cached segment bytes for digits 0..3
+- cached segment bytes for digits `0..3`
 
 The cached segment bytes are the final display image, including the dot bit.
 
@@ -73,6 +74,14 @@ The cached segment bytes are the final display image, including the dot bit.
 - `setDot(pos, true)` clears any existing dot and sets the chosen one
 - `setDot(pos, false)` clears the chosen one
 
+## Display power policy
+
+- `displayOff()` disables visible output but does not clear the cached display state
+- `setNumber(...)`, `setHex(...)`, and `setDot(...)` continue updating the cache while display output is off
+- `displayOn()` re-enables output and actively rewrites the cached display image
+
+This gives the library a stronger restore contract and avoids relying on undocumented display-memory retention in the chip.
+
 ## Button-read policy
 
 The device stays in 8-segment display mode during normal operation.
@@ -82,6 +91,17 @@ The device stays in 8-segment display mode during normal operation.
 2. read raw key byte
 3. write control bytes for normal 8-segment mode
 4. rewrite cached display bytes
+
+## Timing policy
+
+The current implementation does not add fixed delays around button reads or display restore.
+
+Observed hardware behavior so far:
+- temporary flicker during rapid poll/display cycling is very brief
+- the flicker is currently acceptable in the smoke test
+- button reads and display restoration work correctly without delays on tested hardware
+
+Because performance is not a priority, small delays such as `50 ms` or `100 ms` are acceptable if later hardware testing shows they are needed. They should only be added in response to observed problems.
 
 ## Error model
 
