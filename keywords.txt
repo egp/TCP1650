@@ -1,0 +1,8 @@
+TCP1650	KEYWORD1
+begin	KEYWORD2
+clear	KEYWORD2
+setBrightness	KEYWORD2
+setDigits	KEYWORD2
+setDecimalPosition	KEYWORD2
+readButtonsRaw	KEYWORD2
+refresh	KEYWORD2

@@ -1,0 +1,28 @@
+# OS files
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+build/
+out/
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+
+# Coverage / test artifacts
+*.gcda
+*.gcno
+*.gcov
+coverage/
+
+# Python cache
+__pycache__/
