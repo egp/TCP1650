@@ -8,6 +8,7 @@
 #include <vector>
 
 void runStateAndFailureTests();
+void runBoundaryAndWriteFailureTests();
 
 struct BusOp {
   enum class Kind { Write, Read } kind;
@@ -284,5 +285,6 @@ int main() {
   testGetButtonsSwitchesModesAndRestoresDisplay();
   testRejectsOutOfRangeValues();
   runStateAndFailureTests();
+  runBoundaryAndWriteFailureTests();
   return 0;
 }
