@@ -44,7 +44,7 @@ static void assertWrite(const BusOp& op, uint8_t address, uint8_t value) {
   TEST_ASSERT_EQ(1, static_cast<int>(op.success));
 }
 
-static void testDisplayOffThenSetNumberThenDisplayOnShowsCachedValue() {
+static void testDisplayOffThenSetNumberCachesWithoutDisplayWrites() {
   RecordingTransport transport;
   TCP1650_Device device(transport);
 
@@ -53,53 +53,17 @@ static void testDisplayOffThenSetNumberThenDisplayOnShowsCachedValue() {
   transport.clear();
 
   TEST_ASSERT_TRUE(device.setNumber(42u, true));
-  TEST_ASSERT_EQ(static_cast<std::size_t>(4u), transport.ops.size());
-
-  assertWrite(transport.ops[0],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
-              tcp1650EncodeDigit(0u));
-  assertWrite(transport.ops[1],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
-              tcp1650EncodeDigit(0u));
-  assertWrite(transport.ops[2],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
-              tcp1650EncodeDigit(4u));
-  assertWrite(transport.ops[3],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
-              tcp1650EncodeDigit(2u));
-
-  TEST_ASSERT_EQ(static_cast<uint8_t>(0x00u), device.controlByteForTest(true));
-
-  transport.clear();
-  TEST_ASSERT_TRUE(device.displayOn());
-  TEST_ASSERT_EQ(static_cast<std::size_t>(8u), transport.ops.size());
-
-  for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
-    assertWrite(transport.ops[i],
-                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
-                0x01u);
-  }
-
-  assertWrite(transport.ops[4],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
-              tcp1650EncodeDigit(0u));
-  assertWrite(transport.ops[5],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
-              tcp1650EncodeDigit(0u));
-  assertWrite(transport.ops[6],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
-              tcp1650EncodeDigit(4u));
-  assertWrite(transport.ops[7],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
-              tcp1650EncodeDigit(2u));
+  TEST_ASSERT_EQ(static_cast<std::size_t>(0u), transport.ops.size());
 
   TEST_ASSERT_EQ(tcp1650EncodeDigit(0u), device.segmentAt(0u));
   TEST_ASSERT_EQ(tcp1650EncodeDigit(0u), device.segmentAt(1u));
   TEST_ASSERT_EQ(tcp1650EncodeDigit(4u), device.segmentAt(2u));
   TEST_ASSERT_EQ(tcp1650EncodeDigit(2u), device.segmentAt(3u));
+
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x00u), device.controlByteForTest(true));
 }
 
-static void testDisplayOffThenSetHexThenDisplayOnShowsCachedValue() {
+static void testDisplayOffThenSetHexCachesWithoutDisplayWrites() {
   RecordingTransport transport;
   TCP1650_Device device(transport);
 
@@ -108,83 +72,27 @@ static void testDisplayOffThenSetHexThenDisplayOnShowsCachedValue() {
   transport.clear();
 
   TEST_ASSERT_TRUE(device.setHex(0x03AFu, true));
-  TEST_ASSERT_EQ(static_cast<std::size_t>(4u), transport.ops.size());
-
-  assertWrite(transport.ops[0],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
-              tcp1650EncodeHexDigit(0u));
-  assertWrite(transport.ops[1],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
-              tcp1650EncodeHexDigit(3u));
-  assertWrite(transport.ops[2],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
-              tcp1650EncodeHexDigit(10u));
-  assertWrite(transport.ops[3],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
-              tcp1650EncodeHexDigit(15u));
-
-  TEST_ASSERT_EQ(static_cast<uint8_t>(0x00u), device.controlByteForTest(true));
-
-  transport.clear();
-  TEST_ASSERT_TRUE(device.displayOn());
-  TEST_ASSERT_EQ(static_cast<std::size_t>(8u), transport.ops.size());
-
-  for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
-    assertWrite(transport.ops[i],
-                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
-                0x01u);
-  }
-
-  assertWrite(transport.ops[4],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
-              tcp1650EncodeHexDigit(0u));
-  assertWrite(transport.ops[5],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
-              tcp1650EncodeHexDigit(3u));
-  assertWrite(transport.ops[6],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
-              tcp1650EncodeHexDigit(10u));
-  assertWrite(transport.ops[7],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
-              tcp1650EncodeHexDigit(15u));
+  TEST_ASSERT_EQ(static_cast<std::size_t>(0u), transport.ops.size());
 
   TEST_ASSERT_EQ(tcp1650EncodeHexDigit(0u), device.segmentAt(0u));
   TEST_ASSERT_EQ(tcp1650EncodeHexDigit(3u), device.segmentAt(1u));
   TEST_ASSERT_EQ(tcp1650EncodeHexDigit(10u), device.segmentAt(2u));
   TEST_ASSERT_EQ(tcp1650EncodeHexDigit(15u), device.segmentAt(3u));
+
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x00u), device.controlByteForTest(true));
 }
 
-static void testDisplayOffDoesNotClearDotOrCachedDigits() {
+static void testDisplayOffThenSetDotCachesWithoutDisplayWrites() {
   RecordingTransport transport;
   TCP1650_Device device(transport);
 
   TEST_ASSERT_TRUE(device.begin());
   TEST_ASSERT_TRUE(device.setNumber(1234u, false));
-  TEST_ASSERT_TRUE(device.setDot(1u, true));
   TEST_ASSERT_TRUE(device.displayOff());
   transport.clear();
 
-  TEST_ASSERT_TRUE(device.displayOn());
-  TEST_ASSERT_EQ(static_cast<std::size_t>(8u), transport.ops.size());
-
-  for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
-    assertWrite(transport.ops[i],
-                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
-                0x01u);
-  }
-
-  assertWrite(transport.ops[4],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
-              tcp1650EncodeDigit(1u));
-  assertWrite(transport.ops[5],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
-              static_cast<uint8_t>(tcp1650EncodeDigit(2u) | TCP1650_DOT_BIT));
-  assertWrite(transport.ops[6],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
-              tcp1650EncodeDigit(3u));
-  assertWrite(transport.ops[7],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
-              tcp1650EncodeDigit(4u));
+  TEST_ASSERT_TRUE(device.setDot(1u, true));
+  TEST_ASSERT_EQ(static_cast<std::size_t>(0u), transport.ops.size());
 
   TEST_ASSERT_EQ(tcp1650EncodeDigit(1u), device.segmentAt(0u));
   TEST_ASSERT_EQ(static_cast<uint8_t>(tcp1650EncodeDigit(2u) | TCP1650_DOT_BIT),
@@ -193,14 +101,46 @@ static void testDisplayOffDoesNotClearDotOrCachedDigits() {
   TEST_ASSERT_EQ(tcp1650EncodeDigit(4u), device.segmentAt(3u));
 }
 
-static void testMultipleOffStateUpdatesKeepMostRecentCachedValue() {
+static void testDisplayOnRepaintsCachedNumberAfterOffStateUpdate() {
   RecordingTransport transport;
   TCP1650_Device device(transport);
 
   TEST_ASSERT_TRUE(device.begin());
   TEST_ASSERT_TRUE(device.displayOff());
-  TEST_ASSERT_TRUE(device.setNumber(1111u, true));
+  TEST_ASSERT_TRUE(device.setNumber(42u, true));
+  transport.clear();
+
+  TEST_ASSERT_TRUE(device.displayOn());
+  TEST_ASSERT_EQ(static_cast<std::size_t>(8u), transport.ops.size());
+
+  for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
+    assertWrite(transport.ops[i],
+                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
+                0x01u);
+  }
+
+  assertWrite(transport.ops[4],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
+              tcp1650EncodeDigit(0u));
+  assertWrite(transport.ops[5],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
+              tcp1650EncodeDigit(0u));
+  assertWrite(transport.ops[6],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
+              tcp1650EncodeDigit(4u));
+  assertWrite(transport.ops[7],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
+              tcp1650EncodeDigit(2u));
+}
+
+static void testDisplayOnRepaintsCachedHexAndDotAfterOffStateUpdates() {
+  RecordingTransport transport;
+  TCP1650_Device device(transport);
+
+  TEST_ASSERT_TRUE(device.begin());
+  TEST_ASSERT_TRUE(device.displayOff());
   TEST_ASSERT_TRUE(device.setHex(0xBEEFu, true));
+  TEST_ASSERT_TRUE(device.setDot(2u, true));
   transport.clear();
 
   TEST_ASSERT_TRUE(device.displayOn());
@@ -220,22 +160,18 @@ static void testMultipleOffStateUpdatesKeepMostRecentCachedValue() {
               tcp1650EncodeHexDigit(14u));
   assertWrite(transport.ops[6],
               static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
-              tcp1650EncodeHexDigit(14u));
+              static_cast<uint8_t>(tcp1650EncodeHexDigit(14u) | TCP1650_DOT_BIT));
   assertWrite(transport.ops[7],
               static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
               tcp1650EncodeHexDigit(15u));
-
-  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(11u), device.segmentAt(0u));
-  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(14u), device.segmentAt(1u));
-  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(14u), device.segmentAt(2u));
-  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(15u), device.segmentAt(3u));
 }
 
 }  // namespace
 
 void runDisplayOffCacheTests() {
-  testDisplayOffThenSetNumberThenDisplayOnShowsCachedValue();
-  testDisplayOffThenSetHexThenDisplayOnShowsCachedValue();
-  testDisplayOffDoesNotClearDotOrCachedDigits();
-  testMultipleOffStateUpdatesKeepMostRecentCachedValue();
+  testDisplayOffThenSetNumberCachesWithoutDisplayWrites();
+  testDisplayOffThenSetHexCachesWithoutDisplayWrites();
+  testDisplayOffThenSetDotCachesWithoutDisplayWrites();
+  testDisplayOnRepaintsCachedNumberAfterOffStateUpdate();
+  testDisplayOnRepaintsCachedHexAndDotAfterOffStateUpdates();
 }

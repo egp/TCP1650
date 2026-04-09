@@ -72,6 +72,9 @@ bool TCP1650_Device::setNumber(uint16_t value, bool leadingZeros) {
     segments_[i] = static_cast<uint8_t>(encoded[i] | dot);
   }
 
+  if (!displayEnabled_) {
+    return true;
+  }
   return refreshDisplay();
 }
 
@@ -100,6 +103,9 @@ bool TCP1650_Device::setHex(uint16_t value, bool leadingZeros) {
     segments_[i] = static_cast<uint8_t>(encoded[i] | dot);
   }
 
+  if (!displayEnabled_) {
+    return true;
+  }
   return refreshDisplay();
 }
 
@@ -115,6 +121,9 @@ bool TCP1650_Device::setDot(uint8_t position, bool on) {
     segments_[position] = static_cast<uint8_t>(segments_[position] & ~TCP1650_DOT_BIT);
   }
 
+  if (!displayEnabled_) {
+    return true;
+  }
   return refreshDisplay();
 }
 

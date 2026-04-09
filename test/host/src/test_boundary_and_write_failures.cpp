@@ -211,7 +211,7 @@ static void testSetHexWriteFailureReturnsFalseAndUpdatesCache() {
   TEST_ASSERT_EQ(tcp1650EncodeHexDigit(13u), device.segmentAt(3u));
 }
 
-static void testDisplayOffThenSetHexKeepsOffState() {
+static void testDisplayOffThenSetHexKeepsOffStateAndAvoidsDisplayWrites() {
   FaultyTransport transport;
   TCP1650_Device device(transport);
 
@@ -221,20 +221,12 @@ static void testDisplayOffThenSetHexKeepsOffState() {
 
   TEST_ASSERT_TRUE(device.setHex(0x00AFu, false));
   TEST_ASSERT_EQ(static_cast<uint8_t>(0x00u), device.controlByteForTest(true));
-  TEST_ASSERT_EQ(static_cast<std::size_t>(4u), transport.ops.size());
+  TEST_ASSERT_EQ(static_cast<std::size_t>(0u), transport.ops.size());
 
-  assertWrite(transport.ops[0],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
-              0x00u);
-  assertWrite(transport.ops[1],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
-              0x00u);
-  assertWrite(transport.ops[2],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
-              tcp1650EncodeHexDigit(10u));
-  assertWrite(transport.ops[3],
-              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
-              tcp1650EncodeHexDigit(15u));
+  TEST_ASSERT_EQ(0x00u, device.segmentAt(0u));
+  TEST_ASSERT_EQ(0x00u, device.segmentAt(1u));
+  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(10u), device.segmentAt(2u));
+  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(15u), device.segmentAt(3u));
 }
 
 static void testGetButtonsInitialControlWriteFailureRestoresDisplayAndReturnsZero() {
@@ -340,7 +332,7 @@ void runBoundaryAndWriteFailureTests() {
   testSetHexUpperBoundary();
   testSetNumberWriteFailureReturnsFalseAndUpdatesCache();
   testSetHexWriteFailureReturnsFalseAndUpdatesCache();
-  testDisplayOffThenSetHexKeepsOffState();
+  testDisplayOffThenSetHexKeepsOffStateAndAvoidsDisplayWrites();
   testGetButtonsInitialControlWriteFailureRestoresDisplayAndReturnsZero();
   testGetButtonsReadFailureRestoresCachedDotState();
 }
