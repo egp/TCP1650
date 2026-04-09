@@ -9,6 +9,7 @@
 
 void runStateAndFailureTests();
 void runBoundaryAndWriteFailureTests();
+void runDisplayOffCacheTests();
 
 struct BusOp {
   enum class Kind { Write, Read } kind;
@@ -286,5 +287,6 @@ int main() {
   testRejectsOutOfRangeValues();
   runStateAndFailureTests();
   runBoundaryAndWriteFailureTests();
+  runDisplayOffCacheTests();
   return 0;
 }
