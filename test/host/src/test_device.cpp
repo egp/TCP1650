@@ -7,9 +7,11 @@
 #include <cstdint>
 #include <vector>
 
+// Forward declarations of test functions defined later
 void runStateAndFailureTests();
 void runBoundaryAndWriteFailureTests();
 void runDisplayOffCacheTests();
+void runOffStateButtonReadTests();
 
 struct BusOp {
   enum class Kind { Write, Read } kind;
@@ -288,5 +290,6 @@ int main() {
   runStateAndFailureTests();
   runBoundaryAndWriteFailureTests();
   runDisplayOffCacheTests();
+  runOffStateButtonReadTests();
   return 0;
 }

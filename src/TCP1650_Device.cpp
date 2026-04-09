@@ -132,18 +132,24 @@ uint8_t TCP1650_Device::getButtons() {
 
   if (!writeControl(false)) {
     (void)writeControl(true);
-    (void)refreshDisplay();
+    if (displayEnabled_) {
+      (void)refreshDisplay();
+    }
     return 0u;
   }
 
   if (!transport_.readByte(TCP1650_BUTTON_READ_ADDR, value)) {
     (void)writeControl(true);
-    (void)refreshDisplay();
+    if (displayEnabled_) {
+      (void)refreshDisplay();
+    }
     return 0u;
   }
 
   (void)writeControl(true);
-  (void)refreshDisplay();
+  if (displayEnabled_) {
+    (void)refreshDisplay();
+  }
   return value;
 }
 
