@@ -122,6 +122,8 @@ uint8_t TCP1650_Device::getButtons() {
   uint8_t value = 0u;
 
   if (!writeControl(false)) {
+    (void)writeControl(true);
+    (void)refreshDisplay();
     return 0u;
   }
 
