@@ -20,6 +20,7 @@ public:
   bool displayOff();
   bool setBrightness(uint8_t level);
   bool setNumber(uint16_t value, bool leadingZeros = false);
+  bool setHex(uint16_t value, bool leadingZeros = false);
   bool setDot(uint8_t position, bool on);
   uint8_t getButtons();
 

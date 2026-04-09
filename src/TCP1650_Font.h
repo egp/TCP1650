@@ -4,5 +4,6 @@
 #include <stdint.h>
 
 uint8_t tcp1650EncodeDigit(uint8_t digit);
+uint8_t tcp1650EncodeHexDigit(uint8_t digit);
 
 #endif

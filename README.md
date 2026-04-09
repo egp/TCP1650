@@ -3,7 +3,7 @@
 Arduino library for the TM1650/TCP1650 4-digit LED driver with these constraints:
 
 - no dependencies beyond standard Arduino core and `Wire`
-- numeric display only: digits `0..9`
+- numeric display plus hexadecimal display
 - one decimal point at a time
 - raw button reads only
 - normal display mode is 8-segment
@@ -17,6 +17,7 @@ TCP1650 display(SDA, SCL);
 display.begin();
 display.setBrightness(4);
 display.setNumber(1234, false);
+display.setHex(0x3A, false);
 display.setDot(2, true);
 const uint8_t buttons = display.getButtons();
 display.displayOff();

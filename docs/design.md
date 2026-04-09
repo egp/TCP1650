@@ -24,7 +24,7 @@ File set:
 
 Role:
 - segment cache
-- digit encoding
+- decimal and hexadecimal digit encoding
 - control-byte creation
 - number formatting
 - one-dot policy
@@ -58,6 +58,14 @@ The cached segment bytes are the final display image, including the dot bit.
 - accepts `0..9999`
 - emits blank leading positions when `leadingZeros == false`
 - preserves any currently active dot bit on each position
+
+## Hex formatting
+
+`setHex(value, leadingZeros)`:
+- accepts `0x0000..0xFFFF`
+- emits blank leading positions when `leadingZeros == false`
+- preserves any currently active dot bit on each position
+- uses mixed-case `A b C d E F`
 
 ## Dot policy
 

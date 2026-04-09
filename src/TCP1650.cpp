@@ -26,6 +26,10 @@ bool TCP1650::setNumber(uint16_t value, bool leadingZeros) {
   return device_.setNumber(value, leadingZeros);
 }
 
+bool TCP1650::setHex(uint16_t value, bool leadingZeros) {
+  return device_.setHex(value, leadingZeros);
+}
+
 bool TCP1650::setDot(uint8_t position, bool on) {
   return device_.setDot(position, on);
 }

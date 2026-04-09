@@ -14,11 +14,20 @@ static constexpr uint8_t TCP1650_MODE_7SEG_BIT = 0x08;
 static constexpr uint8_t TCP1650_DISPLAY_ON_BIT = 0x01;
 static constexpr uint8_t TCP1650_BRIGHTNESS_SHIFT = 4;
 
+static inline uint8_t tcp1650EncodeBrightnessLevel(uint8_t userLevel) {
+  return static_cast<uint8_t>((userLevel + 1u) & 0x07u);
+}
+
 static inline uint8_t tcp1650MakeControlByte(bool displayOn,
                                              bool eightSegmentMode,
                                              uint8_t brightness) {
-  const uint8_t clamped = static_cast<uint8_t>(brightness & 0x07u);
-  uint8_t value = static_cast<uint8_t>(clamped << TCP1650_BRIGHTNESS_SHIFT);
+  const uint8_t clampedUserLevel = static_cast<uint8_t>(brightness & 0x07u);
+  const uint8_t encodedBrightness =
+      tcp1650EncodeBrightnessLevel(clampedUserLevel);
+
+  uint8_t value = static_cast<uint8_t>(encodedBrightness
+                                       << TCP1650_BRIGHTNESS_SHIFT);
+
   if (!eightSegmentMode) {
     value = static_cast<uint8_t>(value | TCP1650_MODE_7SEG_BIT);
   }

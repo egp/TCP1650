@@ -72,6 +72,34 @@ bool TCP1650_Device::setNumber(uint16_t value, bool leadingZeros) {
   return refreshDisplay();
 }
 
+bool TCP1650_Device::setHex(uint16_t value, bool leadingZeros) {
+  uint8_t rawDigits[TCP1650_DIGIT_COUNT] = {0u, 0u, 0u, 0u};
+  uint8_t encoded[TCP1650_DIGIT_COUNT] = {0u, 0u, 0u, 0u};
+  uint16_t working = value;
+
+  for (int8_t position = static_cast<int8_t>(TCP1650_DIGIT_COUNT) - 1; position >= 0;
+       --position) {
+    rawDigits[position] = static_cast<uint8_t>(working & 0x0Fu);
+    working = static_cast<uint16_t>(working >> 4u);
+  }
+
+  bool seenNonZero = false;
+  for (uint8_t position = 0; position < TCP1650_DIGIT_COUNT; ++position) {
+    if (leadingZeros || seenNonZero || rawDigits[position] != 0u ||
+        position == TCP1650_DIGIT_COUNT - 1u) {
+      encoded[position] = tcp1650EncodeHexDigit(rawDigits[position]);
+      seenNonZero = true;
+    }
+  }
+
+  for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
+    const uint8_t dot = static_cast<uint8_t>(segments_[i] & TCP1650_DOT_BIT);
+    segments_[i] = static_cast<uint8_t>(encoded[i] | dot);
+  }
+
+  return refreshDisplay();
+}
+
 bool TCP1650_Device::setDot(uint8_t position, bool on) {
   if (position >= TCP1650_DIGIT_COUNT) {
     return false;

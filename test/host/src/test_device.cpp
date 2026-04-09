@@ -35,13 +35,15 @@ public:
 };
 
 static void assertWrite(const BusOp& op, uint8_t address, uint8_t value) {
-  TEST_ASSERT_EQ(static_cast<int>(BusOp::Kind::Write), static_cast<int>(op.kind));
+  TEST_ASSERT_EQ(static_cast<int>(BusOp::Kind::Write),
+                 static_cast<int>(op.kind));
   TEST_ASSERT_EQ(static_cast<int>(address), static_cast<int>(op.address));
   TEST_ASSERT_EQ(static_cast<int>(value), static_cast<int>(op.value));
 }
 
 static void assertRead(const BusOp& op, uint8_t address, uint8_t value) {
-  TEST_ASSERT_EQ(static_cast<int>(BusOp::Kind::Read), static_cast<int>(op.kind));
+  TEST_ASSERT_EQ(static_cast<int>(BusOp::Kind::Read),
+                 static_cast<int>(op.kind));
   TEST_ASSERT_EQ(static_cast<int>(address), static_cast<int>(op.address));
   TEST_ASSERT_EQ(static_cast<int>(value), static_cast<int>(op.value));
 }
@@ -59,6 +61,15 @@ static void testEncodeDigit() {
   TEST_ASSERT_EQ(static_cast<uint8_t>(0x6F), tcp1650EncodeDigit(9u));
 }
 
+static void testEncodeHexDigit() {
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x77), tcp1650EncodeHexDigit(10u));
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x7C), tcp1650EncodeHexDigit(11u));
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x39), tcp1650EncodeHexDigit(12u));
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x5E), tcp1650EncodeHexDigit(13u));
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x79), tcp1650EncodeHexDigit(14u));
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x71), tcp1650EncodeHexDigit(15u));
+}
+
 static void testBeginWritesControlThen0000() {
   FakeTransport transport;
   TCP1650_Device device(transport);
@@ -67,13 +78,43 @@ static void testBeginWritesControlThen0000() {
   TEST_ASSERT_EQ(static_cast<std::size_t>(8u), transport.ops.size());
 
   for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
-    assertWrite(transport.ops[i], static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i), 0x71u);
+    assertWrite(transport.ops[i],
+                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
+                0x01u);
   }
   for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
     assertWrite(transport.ops[TCP1650_DIGIT_COUNT + i],
                 static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + i),
                 tcp1650EncodeDigit(0u));
   }
+}
+
+static void testBrightnessEncodingWrapsAsExpected() {
+  FakeTransport transport;
+  TCP1650_Device device(transport);
+
+  TEST_ASSERT_TRUE(device.begin());
+  transport.clear();
+
+  TEST_ASSERT_TRUE(device.setBrightness(0u));
+  TEST_ASSERT_EQ(static_cast<std::size_t>(4u), transport.ops.size());
+  for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
+    assertWrite(transport.ops[i],
+                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
+                0x11u);
+  }
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x11u), device.controlByteForTest(true));
+
+  transport.clear();
+
+  TEST_ASSERT_TRUE(device.setBrightness(7u));
+  TEST_ASSERT_EQ(static_cast<std::size_t>(4u), transport.ops.size());
+  for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
+    assertWrite(transport.ops[i],
+                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
+                0x01u);
+  }
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x01u), device.controlByteForTest(true));
 }
 
 static void testSetNumberFormatsWithoutLeadingZeros() {
@@ -86,10 +127,18 @@ static void testSetNumberFormatsWithoutLeadingZeros() {
   TEST_ASSERT_TRUE(device.setNumber(42u, false));
   TEST_ASSERT_EQ(static_cast<std::size_t>(4u), transport.ops.size());
 
-  assertWrite(transport.ops[0], static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u), 0x00u);
-  assertWrite(transport.ops[1], static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u), 0x00u);
-  assertWrite(transport.ops[2], static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u), tcp1650EncodeDigit(4u));
-  assertWrite(transport.ops[3], static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u), tcp1650EncodeDigit(2u));
+  assertWrite(transport.ops[0],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
+              0x00u);
+  assertWrite(transport.ops[1],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
+              0x00u);
+  assertWrite(transport.ops[2],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
+              tcp1650EncodeDigit(4u));
+  assertWrite(transport.ops[3],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
+              tcp1650EncodeDigit(2u));
 }
 
 static void testSetNumberFormatsWithLeadingZeros() {
@@ -106,6 +155,44 @@ static void testSetNumberFormatsWithLeadingZeros() {
   TEST_ASSERT_EQ(tcp1650EncodeDigit(2u), device.segmentAt(3u));
 }
 
+static void testSetHexFormatsWithoutLeadingZeros() {
+  FakeTransport transport;
+  TCP1650_Device device(transport);
+
+  TEST_ASSERT_TRUE(device.begin());
+  transport.clear();
+
+  TEST_ASSERT_TRUE(device.setHex(0x003Au, false));
+  TEST_ASSERT_EQ(static_cast<std::size_t>(4u), transport.ops.size());
+
+  assertWrite(transport.ops[0],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
+              0x00u);
+  assertWrite(transport.ops[1],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
+              0x00u);
+  assertWrite(transport.ops[2],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
+              tcp1650EncodeHexDigit(3u));
+  assertWrite(transport.ops[3],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
+              tcp1650EncodeHexDigit(10u));
+}
+
+static void testSetHexFormatsWithLeadingZeros() {
+  FakeTransport transport;
+  TCP1650_Device device(transport);
+
+  TEST_ASSERT_TRUE(device.begin());
+  transport.clear();
+
+  TEST_ASSERT_TRUE(device.setHex(0x03AFu, true));
+  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(0u), device.segmentAt(0u));
+  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(3u), device.segmentAt(1u));
+  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(10u), device.segmentAt(2u));
+  TEST_ASSERT_EQ(tcp1650EncodeHexDigit(15u), device.segmentAt(3u));
+}
+
 static void testSetDotUsesHighBitAndEnforcesOneDot() {
   FakeTransport transport;
   TCP1650_Device device(transport);
@@ -116,12 +203,15 @@ static void testSetDotUsesHighBitAndEnforcesOneDot() {
 
   TEST_ASSERT_TRUE(device.setDot(2u, true));
   TEST_ASSERT_EQ(static_cast<std::size_t>(4u), transport.ops.size());
-  TEST_ASSERT_EQ(static_cast<uint8_t>(tcp1650EncodeDigit(3u) | TCP1650_DOT_BIT), device.segmentAt(2u));
+  TEST_ASSERT_EQ(static_cast<uint8_t>(tcp1650EncodeDigit(3u) | TCP1650_DOT_BIT),
+                 device.segmentAt(2u));
   TEST_ASSERT_EQ(tcp1650EncodeDigit(4u), device.segmentAt(3u));
 
   TEST_ASSERT_TRUE(device.setDot(3u, true));
-  TEST_ASSERT_EQ(static_cast<uint8_t>(tcp1650EncodeDigit(3u)), device.segmentAt(2u));
-  TEST_ASSERT_EQ(static_cast<uint8_t>(tcp1650EncodeDigit(4u) | TCP1650_DOT_BIT), device.segmentAt(3u));
+  TEST_ASSERT_EQ(static_cast<uint8_t>(tcp1650EncodeDigit(3u)),
+                 device.segmentAt(2u));
+  TEST_ASSERT_EQ(static_cast<uint8_t>(tcp1650EncodeDigit(4u) | TCP1650_DOT_BIT),
+                 device.segmentAt(3u));
 }
 
 static void testGetButtonsSwitchesModesAndRestoresDisplay() {
@@ -129,29 +219,41 @@ static void testGetButtonsSwitchesModesAndRestoresDisplay() {
   TCP1650_Device device(transport);
 
   TEST_ASSERT_TRUE(device.begin());
-  TEST_ASSERT_TRUE(device.setNumber(1234u, false));
+  TEST_ASSERT_TRUE(device.setHex(0x12AFu, false));
   TEST_ASSERT_TRUE(device.setDot(1u, true));
   transport.clear();
-  transport.nextReadValue = 0x05u;
+  transport.nextReadValue = 0x44u;
 
   const uint8_t buttons = device.getButtons();
-  TEST_ASSERT_EQ(static_cast<uint8_t>(0x05u), buttons);
+  TEST_ASSERT_EQ(static_cast<uint8_t>(0x44u), buttons);
   TEST_ASSERT_EQ(static_cast<std::size_t>(13u), transport.ops.size());
 
   for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
-    assertWrite(transport.ops[i], static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i), 0x79u);
+    assertWrite(transport.ops[i],
+                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
+                0x09u);
   }
 
-  assertRead(transport.ops[4], TCP1650_BUTTON_READ_ADDR, 0x05u);
+  assertRead(transport.ops[4], TCP1650_BUTTON_READ_ADDR, 0x44u);
 
   for (uint8_t i = 0; i < TCP1650_DIGIT_COUNT; ++i) {
-    assertWrite(transport.ops[5 + i], static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i), 0x71u);
+    assertWrite(transport.ops[5 + i],
+                static_cast<uint8_t>(TCP1650_CONTROL_BASE_ADDR + i),
+                0x01u);
   }
 
-  assertWrite(transport.ops[9], static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u), tcp1650EncodeDigit(1u));
-  assertWrite(transport.ops[10], static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u), static_cast<uint8_t>(tcp1650EncodeDigit(2u) | TCP1650_DOT_BIT));
-  assertWrite(transport.ops[11], static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u), tcp1650EncodeDigit(3u));
-  assertWrite(transport.ops[12], static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u), tcp1650EncodeDigit(4u));
+  assertWrite(transport.ops[9],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 0u),
+              tcp1650EncodeHexDigit(1u));
+  assertWrite(transport.ops[10],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 1u),
+              static_cast<uint8_t>(tcp1650EncodeHexDigit(2u) | TCP1650_DOT_BIT));
+  assertWrite(transport.ops[11],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 2u),
+              tcp1650EncodeHexDigit(10u));
+  assertWrite(transport.ops[12],
+              static_cast<uint8_t>(TCP1650_DISPLAY_BASE_ADDR + 3u),
+              tcp1650EncodeHexDigit(15u));
 }
 
 static void testRejectsOutOfRangeValues() {
@@ -169,9 +271,13 @@ static void testRejectsOutOfRangeValues() {
 
 int main() {
   testEncodeDigit();
+  testEncodeHexDigit();
   testBeginWritesControlThen0000();
+  testBrightnessEncodingWrapsAsExpected();
   testSetNumberFormatsWithoutLeadingZeros();
   testSetNumberFormatsWithLeadingZeros();
+  testSetHexFormatsWithoutLeadingZeros();
+  testSetHexFormatsWithLeadingZeros();
   testSetDotUsesHighBitAndEnforcesOneDot();
   testGetButtonsSwitchesModesAndRestoresDisplay();
   testRejectsOutOfRangeValues();
