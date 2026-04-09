@@ -3,9 +3,10 @@
 TCP1650 display(SDA, SCL);
 
 void setup() {
-  display.begin();
-  display.setDigits("3141");
-  display.setDecimalPosition(0);
+  (void)display.begin();
+  (void)display.setNumber(3141, false);
+  (void)display.setDot(1, true);
 }
 
-void loop() {}
+void loop() {
+}

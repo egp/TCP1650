@@ -1,11 +1,11 @@
 CXX ?= g++
-CXXFLAGS ?= -std=c++17 -Wall -Wextra -Werror -pedantic -Iinclude
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
+CXXFLAGS ?= -std=c++17 -Wall -Wextra -Werror -pedantic -Iinclude -I../../src
 BUILD_DIR := build/$(UNAME_S)-$(UNAME_M)
 BIN := $(BUILD_DIR)/host_tests
 
-SOURCES := $(wildcard src/*.cpp)
+SOURCES := $(wildcard src/*.cpp) ../../src/TCP1650_Device.cpp ../../src/TCP1650_Font.cpp
 
 .PHONY: all test clean
 
@@ -19,4 +19,4 @@ $(BIN): $(SOURCES)
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o $(BIN)
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf build

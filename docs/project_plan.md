@@ -1,94 +1,53 @@
-# TCP1650 Project Plan
+# TCP1650 project plan
 
-## Purpose
+## Goal
 
-Build an Arduino library for TM1650 modules that:
+Create a small Arduino library for the TCP1650/TM1650 that supports:
 
-- has no external dependencies beyond Arduino core and `Wire`
-- exposes a mid-level user API
-- supports decimal points
-- supports raw button reads
-- accepts SDA/SCL pin assignments at instance creation
-- supports host-side CI tests without third-party test frameworks
+- 4-digit numeric output
+- one decimal point at a time
+- brightness control
+- display on/off
+- raw button reads
+
+## Phase 0 — repository and planning docs
+
+Status: complete
+
+Deliverables:
+- Arduino library skeleton
+- docs
+- examples
+- host-side test scaffold
+- GitHub Actions scaffold
+
+## Phase 1 — host-testable low-level core
+
+Status: in progress
+
+Immediate work:
+- keep the Arduino/Wire layer thin
+- move protocol behavior into a host-testable core
+- add fake-transport host tests for exact register sequencing
+
+Acceptance criteria:
+- host tests verify exact write/read sequences for `begin()`, `setNumber()`, `setDot()`, and `getButtons()`
+- the public wrapper delegates to the host-tested core
+- only the thin Wire adapter remains outside host coverage
+
+## Phase 2 — hardware shakeout
+
+Tasks:
+- run the hardware smoke sketch on target boards
+- verify digit mapping
+- verify brightness behavior
+- verify one-dot behavior
+- verify temporary 7-segment button reads and subsequent 8-segment display restore
+- confirm the actual key-read address and any required settle timing on real hardware
 
 ## Target boards
 
+Initial focus:
 - Arduino Uno R3
 - Arduino Uno R4 Minima
 - Arduino Uno R4 WiFi
-
-## Phase 0 — Repository scaffold
-
-Deliverables:
-
-- repository layout
-- Arduino library metadata
-- MIT license
-- initial source skeleton
-- planning/specification documents
-- host-side CI test scaffold
-- example sketch placeholders
-
-Exit criteria:
-
-- repo is structurally ready for commits
-- docs capture current goals and open risks
-- CI runs host-side tests successfully
-
-## Phase 1 — Requirements and design freeze
-
-Deliverables:
-
-- reviewed requirements specification
-- reviewed design specification
-- reviewed API plan
-- hardware validation checklist
-
-Key decisions:
-
-- exact public API
-- exact behavior when switching between 8-segment display mode and 7-segment key mode
-- error handling policy for unsupported SDA/SCL assignments on a target board
-
-Exit criteria:
-
-- requirements and design approved
-- traceable test list drafted from requirements
-- no open architectural blockers remain
-
-## Phase 2 — Core implementation
-
-Deliverables:
-
-- TM1650 register and transport layer
-- display buffer management
-- font/segment encoding support
-- decimal position handling
-- raw button read path
-- mode-switch/restore policy
-
-Exit criteria:
-
-- library initializes and writes digits on target hardware
-- raw button reads work on hardware
-- display state survives button polling path
-
-## Phase 3 — Tests and examples
-
-Deliverables:
-
-- requirement-traceable host-side tests
-- example sketches for display, decimal point, and buttons
-- manual hardware acceptance checklist results
-
-Exit criteria:
-
-- CI host tests pass
-- basic examples work on supported boards
-- key open risks are either retired or documented
-
-## Open risk items
-
-1. Decimal points require 8-segment mode, while key scanning appears to require 7-segment mode.
-2. Mode switching may cause visible flicker or require a display refresh after key reads.
-3. Runtime SDA/SCL assignment may be board-core specific even within the target Arduino families.

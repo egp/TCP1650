@@ -4,26 +4,24 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "TCP1650_Device.h"
+#include "TCP1650_Wire.h"
+
 class TCP1650 {
 public:
-  TCP1650(uint8_t sdaPin, uint8_t sclPin, TwoWire& wire = Wire);
+  explicit TCP1650(uint8_t sdaPin, uint8_t sclPin, TwoWire& wire = Wire);
 
   bool begin();
-  bool clear();
+  bool displayOn();
+  bool displayOff();
   bool setBrightness(uint8_t level);
-  bool setDigits(const char digits[4]);
-  bool setDigits(const uint8_t segments[4]);
-  bool setDecimalPosition(int8_t position);
-  uint8_t readButtonsRaw();
-  bool refresh();
+  bool setNumber(uint16_t value, bool leadingZeros = false);
+  bool setDot(uint8_t position, bool on);
+  uint8_t getButtons();
 
 private:
-  TwoWire* wire_;
-  uint8_t sdaPin_;
-  uint8_t sclPin_;
-  uint8_t brightness_;
-  int8_t decimalPosition_;
-  uint8_t digits_[4];
+  TCP1650_WireTransport transport_;
+  TCP1650_Device device_;
 };
 
 #endif

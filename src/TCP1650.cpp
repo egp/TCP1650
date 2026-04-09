@@ -1,51 +1,35 @@
 #include "TCP1650.h"
 
 TCP1650::TCP1650(uint8_t sdaPin, uint8_t sclPin, TwoWire& wire)
-    : wire_(&wire),
-      sdaPin_(sdaPin),
-      sclPin_(sclPin),
-      brightness_(0),
-      decimalPosition_(-1),
-      digits_{0, 0, 0, 0} {}
+    : transport_(wire, sdaPin, sclPin), device_(transport_) {}
 
 bool TCP1650::begin() {
-  return false;
+  if (!transport_.begin()) {
+    return false;
+  }
+  return device_.begin();
 }
 
-bool TCP1650::clear() {
-  for (uint8_t i = 0; i < 4; ++i) {
-    digits_[i] = 0;
-  }
-  decimalPosition_ = -1;
-  return false;
+bool TCP1650::displayOn() {
+  return device_.displayOn();
+}
+
+bool TCP1650::displayOff() {
+  return device_.displayOff();
 }
 
 bool TCP1650::setBrightness(uint8_t level) {
-  brightness_ = level;
-  return false;
+  return device_.setBrightness(level);
 }
 
-bool TCP1650::setDigits(const char digits[4]) {
-  (void)digits;
-  return false;
+bool TCP1650::setNumber(uint16_t value, bool leadingZeros) {
+  return device_.setNumber(value, leadingZeros);
 }
 
-bool TCP1650::setDigits(const uint8_t segments[4]) {
-  for (uint8_t i = 0; i < 4; ++i) {
-    digits_[i] = segments[i];
-  }
-  return false;
+bool TCP1650::setDot(uint8_t position, bool on) {
+  return device_.setDot(position, on);
 }
 
-bool TCP1650::setDecimalPosition(int8_t position) {
-  decimalPosition_ = position;
-  return false;
-}
-
-uint8_t TCP1650::readButtonsRaw() {
-  return 0;
-}
-
-bool TCP1650::refresh() {
-  return false;
+uint8_t TCP1650::getButtons() {
+  return device_.getButtons();
 }

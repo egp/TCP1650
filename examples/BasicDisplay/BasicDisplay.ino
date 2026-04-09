@@ -3,8 +3,10 @@
 TCP1650 display(SDA, SCL);
 
 void setup() {
-  display.begin();
-  display.setDigits("1234");
+  (void)display.begin();
+  (void)display.setBrightness(4);
+  (void)display.setNumber(1234, false);
 }
 
-void loop() {}
+void loop() {
+}

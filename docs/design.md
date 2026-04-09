@@ -1,107 +1,86 @@
-# TCP1650 Design Specification
+# TCP1650 design
 
-## 1. Architectural overview
+## Architecture
 
-The planned implementation has three layers:
+The library is split into three layers.
 
-1. public API layer (`TCP1650`)
-2. internal device/register layer
-3. internal font/segment-encoding layer
+### 1. Public Arduino wrapper
+File set:
+- `src/TCP1650.h`
+- `src/TCP1650.cpp`
 
-The public API shall remain mid-level. Users should not need to manage individual TM1650 register writes for common operations.
+Role:
+- user-facing API
+- owns the transport and low-level device core
+- delegates behavior
 
-## 2. Proposed source layout
-
-- `src/TCP1650.h` / `src/TCP1650.cpp`
-  - public class
-  - display buffer ownership
-  - API entry points
-- `src/TCP1650_Device.h` / `src/TCP1650_Device.cpp`
-  - TM1650 register addressing
-  - low-level transport helpers
-  - mode changes
-  - raw key reads
-- `src/TCP1650_Font.h` / `src/TCP1650_Font.cpp`
-  - character-to-segment encoding tables/helpers
+### 2. Host-testable device core
+File set:
+- `src/TCP1650_Device.h`
+- `src/TCP1650_Device.cpp`
 - `src/TCP1650_Regs.h`
-  - register constants and bit masks
+- `src/TCP1650_Font.h`
+- `src/TCP1650_Font.cpp`
 
-## 3. Public API direction
+Role:
+- segment cache
+- digit encoding
+- control-byte creation
+- number formatting
+- one-dot policy
+- button-read mode-switch sequence
+- display restore after button read
 
-Planned operations:
+This layer does not include Arduino headers.
 
-- constructor taking SDA and SCL pin assignments
-- `begin()`
-- `clear()`
-- `setBrightness(level)`
-- `setDigits(...)`
-- `setDecimalPosition(position)`
-- `readButtonsRaw()`
-- `refresh()`
+### 3. Thin Wire adapter
+File set:
+- `src/TCP1650_Wire.h`
+- `src/TCP1650_Wire.cpp`
 
-The final API may add overloads, but these operations define the intended scope.
+Role:
+- `Wire.begin(...)`
+- single-byte write
+- single-byte read
 
-## 4. Internal state model
+## State model
 
-The public object is expected to cache at least:
+The low-level core keeps:
+- display enabled flag
+- brightness level
+- cached segment bytes for digits 0..3
 
-- requested SDA pin
-- requested SCL pin
-- current brightness
-- current display mode intent
-- four digit segment bytes
-- decimal-point position
+The cached segment bytes are the final display image, including the dot bit.
 
-## 5. Mode-switch design
+## Number formatting
 
-### 5.1 Problem
-TM1650 appears to require 8-segment mode for decimal points and 7-segment/key mode for button reads.
+`setNumber(value, leadingZeros)`:
+- accepts `0..9999`
+- emits blank leading positions when `leadingZeros == false`
+- preserves any currently active dot bit on each position
 
-### 5.2 Planned strategy
-The default runtime mode shall be display-oriented.
+## Dot policy
 
-For raw button reads, the current design direction is:
+- dot bit is `0x80`
+- `setDot(pos, true)` clears any existing dot and sets the chosen one
+- `setDot(pos, false)` clears the chosen one
 
-1. switch to key-read-compatible mode
-2. perform raw key read
-3. switch back to display mode
-4. refresh cached display state if needed
+## Button-read policy
 
-### 5.3 Risks
+The device stays in 8-segment display mode during normal operation.
 
-- visible flicker
-- transient loss of decimal points
-- need for settling delay between mode change and key read
-- board/core specific timing behavior
+`getButtons()`:
+1. write control bytes for temporary 7-segment/key mode
+2. read raw key byte
+3. write control bytes for normal 8-segment mode
+4. rewrite cached display bytes
 
-These risks are explicitly deferred to hardware validation during Phase 2 and Phase 3.
+## Error model
 
-## 6. Board and transport policy
+- public methods that change state return `bool`
+- raw key reads return a `uint8_t`
+- if a low-level read path fails, the current implementation returns `0` after attempting to restore display mode and display data
 
-The constructor shall accept SDA/SCL assignments because that is a project requirement.
+## Known hardware-risk item
 
-However, actual enforcement of runtime pin assignment may depend on the target Arduino core. The implementation shall therefore separate:
-
-- requested pin assignments
-- actual `Wire` initialization behavior supported by the board core
-
-Phase 1 shall define whether unsupported assignments fail explicitly or are treated as advisory on each target.
-
-## 7. Error-handling direction
-
-Initial implementation direction:
-
-- use `bool` return values for operational success/failure
-- keep API simple
-- document unsupported cases and hardware caveats
-
-## 8. Host-testability direction
-
-Host-side tests shall focus on:
-
-- segment encoding
-- display-buffer transformations
-- decimal-position logic
-- mode-switch sequencing policy via fakes/mocks internal to the repository
-
-Direct hardware I2C interaction is outside host-side CI scope.
+The key-read address and any required delay between switching modes and reading keys must be confirmed on real hardware. The current implementation keeps the address and related constants isolated in `TCP1650_Regs.h` so they can be adjusted without reshaping the rest of the design.

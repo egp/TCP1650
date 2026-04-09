@@ -1,15 +1,16 @@
-# Host-side test scaffold
+# Host-side tests
 
-This directory contains a dependency-free host-side test harness intended for CI.
+This harness intentionally avoids third-party test frameworks.
+
+It exercises the host-testable part of the library:
+- digit-to-segment encoding
+- cached display state
+- control-byte generation
+- exact low-level write/read sequencing for begin, setNumber, setDot, and getButtons
+
+The thin Arduino/Wire adapter is intentionally left outside this harness.
 
 ## Run
 
 ```bash
 make test
-```
-
-## Scope in Phase 0
-
-- verifies CI wiring
-- verifies local assertion helpers
-- provides a place for requirement-traceable tests added in later phases

@@ -1,54 +1,45 @@
-# TCP1650 Test Strategy
+# TCP1650 test strategy
 
-## 1. Goals
+## 1. Host-side tests
 
-Provide a test strategy that:
+Purpose:
+- verify the host-testable core without Arduino dependencies
 
-- traces back to requirements
-- runs in GitHub Actions on a host system
-- does not depend on third-party test frameworks
-- separates host-verifiable logic from hardware-only behavior
+Coverage:
+- digit encoding
+- cached display image
+- control-byte generation
+- `begin()` write sequence
+- `setNumber()` write sequence
+- `setDot()` write sequence and one-dot policy
+- `getButtons()` sequence:
+  - switch to 7-segment/key mode
+  - read key byte
+  - switch back to 8-segment mode
+  - restore cached display
 
-## 2. Test categories
+Mechanism:
+- fake byte transport
+- logged write/read operations
+- exact comparison against expected sequences
 
-### 2.1 Host-side logic tests
-These tests are expected to run in CI and cover:
+## 2. Hardware smoke tests
 
-- segment encoding for supported characters
-- decimal-position mapping
-- display-buffer updates
-- mode-switch sequencing policy using repository-local fakes
-- API-level argument validation where possible
+Purpose:
+- confirm the assumptions that cannot be trusted without real hardware
 
-### 2.2 Hardware acceptance tests
-These tests are expected to run manually on supported boards and cover:
-
-- visible digit output
-- visible decimal points
+Checks:
+- visible numeric output
+- visible decimal point
 - brightness changes
-- raw button reads
-- behavior during mode switching between display and input
+- display on/off
+- button reads
+- display restoration after button reads
 
-## 3. Requirements traceability
+Tool:
+- serial-driven operator sketch in `examples/HardwareSmoke/HardwareSmoke.ino`
 
-Initial mapping targets:
+## 3. Scope boundary
 
-- R-013 -> tests for setting all four digits
-- R-014 -> tests for decimal-position control
-- R-015 -> tests for raw button-read entry point
-- R-031/R-032 -> tests for mode-switch and restore sequencing
-- R-042/R-043 -> CI-hosted tests for logic paths
-
-A fuller traceability matrix will be added once the API and internal helpers are frozen.
-
-## 4. CI approach
-
-The repository shall include a host-side test harness based on:
-
-- standard C++ compiler available in GitHub Actions
-- local assertion helpers in the repo
-- no third-party unit test framework
-
-## 5. Phase 0 scope
-
-Phase 0 provides only the test scaffold, smoke test, and CI wiring.
+The thin Wire adapter is intentionally not the main target of host tests.
+The design goal is to keep that layer small enough that most important logic remains outside it.

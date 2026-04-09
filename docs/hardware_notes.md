@@ -1,32 +1,47 @@
-# TCP1650 Hardware Notes
+# TCP1650 hardware notes
 
-## 1. Target modules
+## Assumptions in the current code
 
-This project targets TM1650-based 4-digit LED modules with button input.
+The current code assumes these 7-bit addresses:
 
-## 2. Known central constraint
+- control base: `0x24`
+- display base: `0x34`
+- button-read address: `0x24`
 
-The current working assumption is:
+The display addresses map to four consecutive digits:
+- `0x34`
+- `0x35`
+- `0x36`
+- `0x37`
 
-- decimal points require 8-segment mode
-- button scanning requires 7-segment/key mode
+The control addresses map similarly:
+- `0x24`
+- `0x25`
+- `0x26`
+- `0x27`
 
-This creates a design conflict that must be handled explicitly.
+## Segment encoding
 
-## 3. Initial policy direction
+The numeric digit mapping is the common 7-segment encoding with `DP` in bit `7`:
 
-The current policy direction is:
+- `0` = `0x3F`
+- `1` = `0x06`
+- `2` = `0x5B`
+- `3` = `0x4F`
+- `4` = `0x66`
+- `5` = `0x6D`
+- `6` = `0x7D`
+- `7` = `0x07`
+- `8` = `0x7F`
+- `9` = `0x6F`
 
-- operate normally in decimal-point-capable display mode
-- temporarily switch mode for raw button reads
-- restore the display state immediately afterward
+## Important open hardware checks
 
-## 4. Validation items
+1. Confirm the button-read address on the actual module.
+2. Confirm whether the module needs a delay after switching into 7-segment/key mode before reading keys.
+3. Confirm whether display restore needs any additional delay after switching back to 8-segment mode.
+4. Confirm the exact behavior on Uno R3, Uno R4 Minima, and Uno R4 WiFi.
 
-Hardware validation must determine:
+## Implementation strategy
 
-- whether the mode-switch assumption is correct on the target modules
-- whether a delay is required before or after key reads
-- whether digit registers must be rewritten after each key read
-- whether visible flicker is acceptable
-- whether target boards differ materially in observed behavior
+Keep all protocol constants centralized so hardware findings can be folded in with small localized edits.
