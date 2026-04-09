@@ -1,15 +1,22 @@
-name: ci
+name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   host-tests:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Check out repository
+      - name: Check out repo
         uses: actions/checkout@v4
 
-      - name: Build and run host tests
+      - name: Show compiler
+        run: c++ --version
+
+      - name: Run host tests
         run: make -C test/host test
