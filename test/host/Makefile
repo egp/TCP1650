@@ -1,6 +1,8 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -Werror -pedantic -Iinclude
-BUILD_DIR := build
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+BUILD_DIR := build/$(UNAME_S)-$(UNAME_M)
 BIN := $(BUILD_DIR)/host_tests
 
 SOURCES := $(wildcard src/*.cpp)
