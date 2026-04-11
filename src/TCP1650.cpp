@@ -1,7 +1,9 @@
+// src/TCP1650.cpp V1
 #include "TCP1650.h"
 
-TCP1650::TCP1650(uint8_t sdaPin, uint8_t sclPin, TwoWire& wire)
-    : transport_(wire, sdaPin, sclPin), device_(transport_) {}
+TCP1650::TCP1650(BBI2C& i2c)
+  : transport_(i2c),
+    device_(transport_) {}
 
 bool TCP1650::begin() {
   if (!transport_.begin()) {
@@ -37,3 +39,4 @@ bool TCP1650::setDot(uint8_t position, bool on) {
 uint8_t TCP1650::getButtons() {
   return device_.getButtons();
 }
+// src/TCP1650.cpp V1
