@@ -1,8 +1,6 @@
+#include <Arduino.h>
+#include <BitBang_I2C.h>
 #include <TCP1650.h>
-
-#include <stdlib.h>
-
-TCP1650 display(SDA, SCL);
 
 namespace {
 
@@ -12,6 +10,12 @@ enum class DisplayMode {
 };
 
 static constexpr unsigned long kPollIntervalMs = 1000UL;
+static constexpr uint8_t kBusSdaPin = 10;
+static constexpr uint8_t kBusSclPin = 11;
+static constexpr uint32_t kBusFrequencyHz = 100000UL;
+
+BBI2C displayBus{};
+TCP1650 display(displayBus);
 
 uint8_t currentBrightness = 4;
 int8_t configuredDot = -1;
@@ -19,7 +23,6 @@ uint16_t currentNumberValue = 0;
 uint16_t currentHexValue = 0;
 bool currentLeadingZeros = true;
 DisplayMode currentDisplayMode = DisplayMode::Number;
-
 bool pollMode = false;
 bool haveLastButtons = false;
 uint8_t lastButtons = 0;
@@ -28,19 +31,27 @@ unsigned long lastPollAtMs = 0;
 void printHelp() {
   Serial.println();
   Serial.println(F("Commands:"));
-  Serial.println(F("  h              help"));
-  Serial.println(F("  n <0-9999>     display decimal number"));
-  Serial.println(F("  x <0-FFFF>     display hexadecimal value"));
-  Serial.println(F("  z <0|1>        leading zeros off/on"));
-  Serial.println(F("  d <0-3>        set decimal point position"));
-  Serial.println(F("  c              clear decimal point"));
-  Serial.println(F("  b              start/continue 1 Hz button poll mode"));
-  Serial.println(F("                 any non-b command exits poll mode"));
-  Serial.println(F("  +              brightness up"));
-  Serial.println(F("  -              brightness down"));
-  Serial.println(F("  o              display on"));
-  Serial.println(F("  f              display off"));
+  Serial.println(F(" h help"));
+  Serial.println(F(" n <0-9999> display decimal number"));
+  Serial.println(F(" x <0-FFFF> display hexadecimal value"));
+  Serial.println(F(" z <0|1> leading zeros off/on"));
+  Serial.println(F(" d <0-3> set decimal point position"));
+  Serial.println(F(" c clear decimal point"));
+  Serial.println(F(" b start/continue 1 Hz button poll mode"));
+  Serial.println(F(" any non-b command exits poll mode"));
+  Serial.println(F(" + brightness up"));
+  Serial.println(F(" - brightness down"));
+  Serial.println(F(" o display on"));
+  Serial.println(F(" f display off"));
   Serial.println();
+}
+
+void setupDisplayBus() {
+  memset(&displayBus, 0, sizeof(displayBus));
+  displayBus.bWire = 0;
+  displayBus.iSDA = kBusSdaPin;
+  displayBus.iSCL = kBusSclPin;
+  I2CInit(&displayBus, kBusFrequencyHz);
 }
 
 bool readToken(char* buffer, size_t bufferSize) {
@@ -61,7 +72,6 @@ bool readToken(char* buffer, size_t bufferSize) {
     }
 
     const char c = static_cast<char>(raw);
-
     if (!started) {
       if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
         continue;
@@ -135,14 +145,15 @@ void pollButtons(bool force) {
   if (!force && (now - lastPollAtMs) < kPollIntervalMs) {
     return;
   }
-  lastPollAtMs = now;
 
+  lastPollAtMs = now;
   const uint8_t buttons = display.getButtons();
   if (!haveLastButtons || buttons != lastButtons) {
     haveLastButtons = true;
     lastButtons = buttons;
     currentHexValue = buttons;
     currentDisplayMode = DisplayMode::Hex;
+
     if (applyCurrentDisplay()) {
       printButtonsRaw(buttons);
     } else {
@@ -157,13 +168,16 @@ bool readCommandChar(char& command) {
     if (raw < 0) {
       return false;
     }
+
     const char c = static_cast<char>(raw);
     if (c == '\r' || c == '\n' || c == ' ' || c == '\t') {
       continue;
     }
+
     command = c;
     return true;
   }
+
   return false;
 }
 
@@ -171,6 +185,7 @@ void enterPollMode() {
   if (!pollMode) {
     Serial.println(F("poll mode on"));
   }
+
   pollMode = true;
   haveLastButtons = false;
   lastPollAtMs = 0;
@@ -306,14 +321,12 @@ void handleCommand(char command) {
   }
 
   if (command == 'o') {
-    Serial.println(display.displayOn() ? F("display on")
-                                       : F("displayOn failed"));
+    Serial.println(display.displayOn() ? F("display on") : F("displayOn failed"));
     return;
   }
 
   if (command == 'f') {
-    Serial.println(display.displayOff() ? F("display off")
-                                        : F("displayOff failed"));
+    Serial.println(display.displayOff() ? F("display off") : F("displayOff failed"));
     return;
   }
 
@@ -328,7 +341,13 @@ void setup() {
   while (!Serial) {
   }
 
+  setupDisplayBus();
+
   Serial.println(F("TCP1650 HardwareSmoke"));
+  Serial.print(F("SDA pin: "));
+  Serial.println(kBusSdaPin);
+  Serial.print(F("SCL pin: "));
+  Serial.println(kBusSclPin);
 
   if (!display.begin()) {
     Serial.println(F("begin() failed"));
@@ -343,6 +362,7 @@ void setup() {
 
 void loop() {
   char command = '\0';
+
   if (readCommandChar(command)) {
     if (pollMode && command != 'b') {
       pollMode = false;
