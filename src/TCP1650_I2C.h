@@ -3,7 +3,7 @@
 #define TCP1650_I2C_H
 
 #include <Arduino.h>
-#include <BitBang_I2C.h>
+#include <TCP1819.h>
 #include "TCP1650_Device.h"
 
 class TCP1650_I2CTransport : public TCP1650_ByteTransport {
