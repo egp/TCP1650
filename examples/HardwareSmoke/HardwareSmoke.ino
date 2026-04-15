@@ -39,7 +39,7 @@ void printHelp() {
   Serial.println(F(" c clear decimal point"));
   Serial.println(F(" b start/continue 1 Hz button poll mode"));
   Serial.println(F(" any non-b command exits poll mode"));
-  Serial.println(F(" + brightness up"));b
+  Serial.println(F(" + brightness up"));
   
   Serial.println(F(" - brightness down"));
   Serial.println(F(" o display on"));
