@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <BitBang_I2C.h>
+#include <TCP1819.h>
 #include <TCP1650.h>
 
 namespace {
@@ -10,8 +10,8 @@ enum class DisplayMode {
 };
 
 static constexpr unsigned long kPollIntervalMs = 1000UL;
-static constexpr uint8_t kBusSdaPin = 10;
-static constexpr uint8_t kBusSclPin = 11;
+static constexpr uint8_t kBusSdaPin = D2;
+static constexpr uint8_t kBusSclPin = D3;
 static constexpr uint32_t kBusFrequencyHz = 100000UL;
 
 BBI2C displayBus{};
@@ -39,7 +39,8 @@ void printHelp() {
   Serial.println(F(" c clear decimal point"));
   Serial.println(F(" b start/continue 1 Hz button poll mode"));
   Serial.println(F(" any non-b command exits poll mode"));
-  Serial.println(F(" + brightness up"));
+  Serial.println(F(" + brightness up"));b
+  
   Serial.println(F(" - brightness down"));
   Serial.println(F(" o display on"));
   Serial.println(F(" f display off"));
@@ -48,7 +49,7 @@ void printHelp() {
 
 void setupDisplayBus() {
   memset(&displayBus, 0, sizeof(displayBus));
-  displayBus.bWire = 0;
+  displayBus.bWire = 0; // use BitBanging not hardware I2C
   displayBus.iSDA = kBusSdaPin;
   displayBus.iSCL = kBusSclPin;
   I2CInit(&displayBus, kBusFrequencyHz);
