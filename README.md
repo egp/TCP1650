@@ -67,7 +67,6 @@ The simple examples use `SDA` and `SCL` as the chosen pins. `HardwareSmoke` keep
 ## Minimal example
 
 #include <string.h>
-
 #include <TCP1819.h>
 #include <TCP1650.h>
 
@@ -176,7 +175,16 @@ Supported commands are printed by the sketch at startup.
 
 Common local commands:
 
-make -C test/host test
+make host-tests
+make compile-examples TCP1819_DIR=../TCP1819
+make test TCP1819_DIR=../TCP1819
+make clean
+
+Notes:
+
+- `make host-tests` does not require Arduino CLI
+- `make compile-examples` and `make test` require `arduino-cli` in `PATH`
+- `make compile-examples` and `make test` also require a sibling checkout of `TCP1819`, unless you override `TCP1819_DIR`
 
 ## Notes
 

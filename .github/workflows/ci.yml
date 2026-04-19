@@ -18,7 +18,7 @@ jobs:
         run: c++ --version
 
       - name: Run host tests
-        run: make -C test/host test
+        run: make host-tests
 
   compile-examples:
     runs-on: ubuntu-latest
