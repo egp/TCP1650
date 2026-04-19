@@ -3,9 +3,11 @@
 ## 1. Host-side tests
 
 Purpose:
-- verify the host-testable core without Arduino dependencies
+
+- verify the host-testable device core without Arduino runtime or real hardware
 
 Coverage:
+
 - decimal and hex glyph encoding
 - cached display image
 - control-byte generation
@@ -16,13 +18,14 @@ Coverage:
 - `displayOn()` / `displayOff()` power-state behavior
 - off-state cache-only updates
 - `getButtons()` sequence:
-  - switch to 7-segment/key mode
-  - read key byte
+  - switch to key-read mode
+  - read the raw key byte
   - restore the prior visible/off state
   - repaint cached display only when required
-- selected low-level failure paths for writes and reads
+- selected low-level write/read failure paths
 
 Mechanism:
+
 - fake byte transport
 - logged write/read operations
 - exact comparison against expected sequences
@@ -30,9 +33,11 @@ Mechanism:
 ## 2. Hardware smoke tests
 
 Purpose:
+
 - confirm the assumptions that cannot be trusted without real hardware
 
 Checks:
+
 - visible decimal output
 - visible hexadecimal output
 - visible decimal point
@@ -44,20 +49,19 @@ Checks:
 - acceptable flicker behavior
 
 Tool:
+
 - serial-driven operator sketch in `examples/HardwareSmoke/HardwareSmoke.ino`
 
-## 3. Board acceptance
+## 3. Board coverage
 
-Board acceptance is tracked separately in:
-- `docs/hardware_acceptance_checklist.md`
+Useful validation targets:
 
-Target boards:
 - Arduino Uno R3
 - Arduino Uno R4 Minima
 - Arduino Uno R4 WiFi
 
 ## 4. Scope boundary
 
-The thin Wire adapter is intentionally not the main target of host tests.
+The thin TCP1819-backed transport layer is intentionally not the main target of host tests.
 
-The design goal is to keep that layer small enough that most important logic remains outside it.
+The design goal is to keep that layer small enough that most important behavior remains outside it.

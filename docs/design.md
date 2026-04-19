@@ -1,10 +1,16 @@
-# TCP1650 design
+# TCP1650 design notes
 
-## Architecture
+## Overview
 
-The library is split into three layers.
+TCP1650 is split into three layers:
 
-### 1. Public Arduino wrapper
+1. small Arduino-facing API
+2. host-testable device core
+3. thin TCP1819-backed transport layer
+
+The goal is to keep display logic and state restoration behavior outside the transport layer so most behavior can be tested without Arduino runtime or hardware.
+
+## Layer 1. Public Arduino-facing API
 
 File set:
 
@@ -13,11 +19,21 @@ File set:
 
 Role:
 
-- user-facing API
-- owns the transport and low-level device core
-- delegates behavior
+- own a `TCP1650_I2CTransport`
+- own a `TCP1650_Device`
+- expose the small public API:
+  - `begin()`
+  - `displayOn()`
+  - `displayOff()`
+  - `setBrightness(...)`
+  - `setNumber(...)`
+  - `setHex(...)`
+  - `setDot(...)`
+  - `getButtons()`
 
-### 2. Host-testable device core
+The public constructor currently accepts a `BBI2C&` supplied by `TCP1819`.
+
+## Layer 2. Host-testable device core
 
 File set:
 
@@ -41,28 +57,30 @@ Role:
 
 This layer does not include Arduino headers.
 
-### 3. Thin Wire adapter
+## Layer 3. Thin TCP1819-backed transport
 
 File set:
 
-- `src/TCP1650_Wire.h`
-- `src/TCP1650_Wire.cpp`
+- `src/TCP1650_I2C.h`
+- `src/TCP1650_I2C.cpp`
 
 Role:
 
-- `Wire.begin(...)`
-- single-byte write
-- single-byte read
+- send single-byte writes to TM1650 register addresses
+- read the raw key byte
+- keep transport details out of the device core
+
+The design goal is to keep this layer as small as practical.
 
 ## State model
 
-The low-level core keeps:
+The device core keeps:
 
 - display enabled flag
 - brightness level
 - cached segment bytes for digits `0..3`
 
-The cached segment bytes are the final display image, including the dot bit.
+The cached segment bytes are the final display image, including any active dot bit.
 
 ## Number formatting
 
@@ -70,7 +88,7 @@ The cached segment bytes are the final display image, including the dot bit.
 
 - accepts `0..9999`
 - emits blank leading positions when `leadingZeros == false`
-- preserves any currently active dot bit on each position
+- preserves the currently selected dot bit in the cached image
 
 ## Hex formatting
 
@@ -78,56 +96,13 @@ The cached segment bytes are the final display image, including the dot bit.
 
 - accepts `0x0000..0xFFFF`
 - emits blank leading positions when `leadingZeros == false`
-- preserves any currently active dot bit on each position
-- uses mixed-case `A b C d E F`
+- preserves the currently selected dot bit in the cached image
+- uses conventional seven-segment hex glyphs
 
-## Dot policy
+## Button reads
 
-- dot bit is `0x80`
-- `setDot(pos, true)` clears any existing dot and sets the chosen one
-- `setDot(pos, false)` clears the chosen one
+`getButtons()` is intentionally raw-byte oriented.
 
-## Display power policy
+The library temporarily switches mode as needed to read the key byte, then restores the prior visible or off-state display condition.
 
-- `displayOff()` disables visible output but does not clear the cached display state
-- while output is off, `setNumber(...)`, `setHex(...)`, and `setDot(...)` update the cache only
-- `displayOn()` re-enables output and actively rewrites the cached display image
-
-This avoids relying on undocumented display-memory retention inside the chip.
-
-## Button-read policy
-
-The device stays in 8-segment display mode during normal operation.
-
-`getButtons()`:
-
-1. writes control bytes for temporary 7-segment/key mode
-2. reads the raw key byte
-3. restores the prior display-control state
-4. repaints cached display bytes only when visible output should be on
-
-This keeps button reads compatible with the one-cache model and with off-state semantics.
-
-## Timing policy
-
-The current implementation does not add fixed delays around button reads or display restore.
-
-Observed hardware behavior so far:
-
-- temporary flicker during rapid poll/display cycling is very brief
-- the flicker is acceptable in the smoke test
-- button reads and display restoration work correctly without delays on tested hardware
-
-Because performance is not a priority, small delays such as `50 ms` or `100 ms` are acceptable if later hardware testing shows they are needed. They should only be added in response to observed problems.
-
-## Error model
-
-- public methods that change state return `bool`
-- raw key reads return a `uint8_t`
-- if a low-level read path fails, the current implementation returns `0` after attempting to restore the prior visible/off display state
-
-## Hardware-risk items
-
-The key-read address and any required delay between switching modes and reading keys must be confirmed on real hardware.
-
-The current implementation keeps protocol constants centralized in `TCP1650_Regs.h` so they can be adjusted without reshaping the rest of the design.
+Any interpretation of raw values into switch positions or UI semantics belongs outside the library.

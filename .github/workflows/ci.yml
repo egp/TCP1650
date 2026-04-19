@@ -10,7 +10,6 @@ on:
 jobs:
   host-tests:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -20,3 +19,46 @@ jobs:
 
       - name: Run host tests
         run: make -C test/host test
+
+  compile-examples:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        fqbn:
+          - arduino:avr:uno
+          - arduino:renesas_uno:minima
+          - arduino:renesas_uno:unor4wifi
+
+    steps:
+      - name: Check out TCP1650
+        uses: actions/checkout@v4
+
+      - name: Check out TCP1819 dependency
+        uses: actions/checkout@v4
+        with:
+          repository: egp/TCP1819
+          path: TCP1819
+
+      - name: Install Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+        with:
+          version: 1.x
+
+      - name: Show Arduino CLI version
+        run: arduino-cli version
+
+      - name: Initialize Arduino CLI config
+        run: arduino-cli config init --overwrite
+
+      - name: Update core index
+        run: arduino-cli core update-index
+
+      - name: Install AVR core
+        run: arduino-cli core install arduino:avr
+
+      - name: Install Renesas Uno core
+        run: arduino-cli core install arduino:renesas_uno
+
+      - name: Compile Arduino sketches
+        run: make compile-examples TCP1819_DIR=TCP1819 FQBN='${{ matrix.fqbn }}'
